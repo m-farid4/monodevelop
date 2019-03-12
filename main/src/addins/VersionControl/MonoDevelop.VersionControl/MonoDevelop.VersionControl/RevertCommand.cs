@@ -56,9 +56,14 @@ namespace MonoDevelop.VersionControl
 			
 			protected override void Run ()
 			{
-				foreach (VersionControlItemList list in items.SplitByRepository ())
-					list[0].Repository.Revert (list.Paths, true, Monitor);
-				
+				foreach (VersionControlItemList list in items.SplitByRepository ()) {
+					try {
+						list [0].Repository.Revert (list.Paths, true, Monitor);
+					} catch (Exception ex) {
+						Monitor.ReportError (ex.Message, null);
+						return;
+					}
+				}
 				Gtk.Application.Invoke ((o, args) => {
 					foreach (VersionControlItem item in items) {
 						if (!item.IsDirectory) {

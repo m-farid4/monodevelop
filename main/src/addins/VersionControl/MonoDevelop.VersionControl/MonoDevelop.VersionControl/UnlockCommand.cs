@@ -25,13 +25,15 @@
 //
 //
 
+using System;
 using System.Linq;
 using MonoDevelop.Core;
+using MonoDevelop.Ide;
 
 namespace MonoDevelop.VersionControl
 {
-	
-	
+
+
 	public class UnlockCommand
 	{
 		public static bool Unlock (VersionControlItemList items, bool test)
@@ -40,32 +42,43 @@ namespace MonoDevelop.VersionControl
 				return false;
 			if (test)
 				return true;
-			
-			new UnlockWorker (items).Start();
+
+			new UnlockWorker (items).Start ();
 			return true;
 		}
 
-		private class UnlockWorker : VersionControlTask 
+		private class UnlockWorker : VersionControlTask
 		{
 			VersionControlItemList items;
-						
-			public UnlockWorker (VersionControlItemList items) {
+
+			public UnlockWorker (VersionControlItemList items)
+			{
 				this.items = items;
 			}
-			
-			protected override string GetDescription() {
+
+			protected override string GetDescription ()
+			{
 				return GettextCatalog.GetString ("Unlocking...");
 			}
-			
+
 			protected override void Run ()
 			{
-				foreach (VersionControlItemList list in items.SplitByRepository ())
-					list[0].Repository.Unlock (Monitor, list.Paths);
-				
-				Gtk.Application.Invoke ((o, args) => {
-					VersionControlService.NotifyFileStatusChanged (items);
-				});
-				Monitor.ReportSuccess (GettextCatalog.GetString ("Unlock operation completed."));
+				try {
+					foreach (VersionControlItemList list in items.SplitByRepository ()) {
+						try {
+							list [0].Repository.Unlock (Monitor, list.Paths);
+						} catch (Exception ex) {
+							Monitor.ReportError (ex.Message, null);
+							return;
+						}
+					}
+					Gtk.Application.Invoke ((o, args) => {
+						VersionControlService.NotifyFileStatusChanged (items);
+					});
+					Monitor.ReportSuccess (GettextCatalog.GetString ("Unlock operation completed."));
+				} catch (Exception ex) {
+					MessageService.ShowError (GettextCatalog.GetString ("Version control command failed."), ex);
+				}
 			}
 		}
 	}

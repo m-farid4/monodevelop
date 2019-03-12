@@ -65,7 +65,8 @@ namespace MonoDevelop.VersionControl
 					
 					// Reset the global comment on successful commit.
 					VersionControlService.SetCommitComment (changeSet.BaseLocalPath, "", true);
-				} catch {
+				} catch(Exception ex) {
+					Monitor.ReportError (ex.Message, null);
 					success = false;
 					throw;
 				}

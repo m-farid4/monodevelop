@@ -25,6 +25,7 @@
 //
 //
 
+using System;
 using System.Linq;
 using MonoDevelop.Core;
 
@@ -38,29 +39,35 @@ namespace MonoDevelop.VersionControl
 				return false;
 			if (test)
 				return true;
-			
-			new LockWorker (items).Start();
+
+			new LockWorker (items).Start ();
 			return true;
 		}
 
-		private class LockWorker : VersionControlTask 
+		private class LockWorker : VersionControlTask
 		{
 			VersionControlItemList items;
-						
-			public LockWorker (VersionControlItemList items) {
+
+			public LockWorker (VersionControlItemList items)
+			{
 				this.items = items;
 			}
-			
-			protected override string GetDescription() {
+
+			protected override string GetDescription ()
+			{
 				return GettextCatalog.GetString ("Locking...");
 			}
-			
+
 			protected override void Run ()
 			{
-				foreach (VersionControlItemList list in items.SplitByRepository ())
-					list[0].Repository.Lock (Monitor, list.Paths);
-				
-				
+				foreach (VersionControlItemList list in items.SplitByRepository ()) {
+					try {
+						list [0].Repository.Lock (Monitor, list.Paths);
+					} catch (Exception ex) {
+						Monitor.ReportError (ex.Message, null);
+						return;
+					}
+				}
 				Gtk.Application.Invoke ((o, args) => {
 					VersionControlService.NotifyFileStatusChanged (items);
 				});

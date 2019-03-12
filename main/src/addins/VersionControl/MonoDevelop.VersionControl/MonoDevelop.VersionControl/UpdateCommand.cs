@@ -1,5 +1,7 @@
+using System;
 using System.Linq;
 using MonoDevelop.Core;
+using MonoDevelop.Ide;
 
 namespace MonoDevelop.VersionControl
 {
@@ -11,27 +13,35 @@ namespace MonoDevelop.VersionControl
 				return false;
 			if (test)
 				return true;
-			
-			new UpdateWorker (items).Start();
+
+			new UpdateWorker (items).Start ();
 			return true;
 		}
 
-		private class UpdateWorker : VersionControlTask {
+		private class UpdateWorker : VersionControlTask
+		{
 			VersionControlItemList items;
-						
-			public UpdateWorker (VersionControlItemList items) {
+
+			public UpdateWorker (VersionControlItemList items)
+			{
 				this.items = items;
 				OperationType = VersionControlOperationType.Pull;
 			}
-			
-			protected override string GetDescription() {
+
+			protected override string GetDescription ()
+			{
 				return GettextCatalog.GetString ("Updating...");
 			}
-			
+
 			protected override void Run ()
 			{
 				foreach (VersionControlItemList list in items.SplitByRepository ()) {
-					list[0].Repository.Update (list.Paths, true, Monitor);
+					try {
+						list [0].Repository.Update (list.Paths, true, Monitor);
+					} catch (Exception ex) {
+						Monitor.ReportError (ex.Message, null);
+						return;
+					}
 				}
 				Gtk.Application.Invoke ((o, args) => {
 					VersionControlService.NotifyFileStatusChanged (items);
@@ -39,7 +49,5 @@ namespace MonoDevelop.VersionControl
 				Monitor.ReportSuccess (GettextCatalog.GetString ("Update operation completed."));
 			}
 		}
-		
 	}
-
 }
