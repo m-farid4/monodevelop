@@ -129,6 +129,7 @@ namespace MonoDevelop.VersionControl
 					Monitor.ReportSuccess (GettextCatalog.GetString ("Revert operation completed."));
 				} catch(Exception ex) {
 					Monitor.ReportError (ex.Message, null);
+					LoggingService.LogError ("Revert operation failed", ex);
 				}
 			}
 		}

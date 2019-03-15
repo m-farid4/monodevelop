@@ -67,6 +67,7 @@ namespace MonoDevelop.VersionControl
 					VersionControlService.SetCommitComment (changeSet.BaseLocalPath, "", true);
 				} catch(Exception ex) {
 					Monitor.ReportError (ex.Message, null);
+					LoggingService.LogError ("Commit operation failed", ex);
 					success = false;
 					throw;
 				}
