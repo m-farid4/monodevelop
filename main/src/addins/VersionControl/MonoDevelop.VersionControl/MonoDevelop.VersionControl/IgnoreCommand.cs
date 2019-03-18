@@ -83,6 +83,7 @@ namespace MonoDevelop.VersionControl
 						list [0].Repository.Ignore (list.Paths);
 					} catch (Exception ex) {
 						Monitor.ReportError (ex.Message, null);
+						LoggingService.LogError ("Unlock operation failed", ex);
 						return;
 					}
 				}
