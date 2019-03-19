@@ -60,8 +60,8 @@ namespace MonoDevelop.VersionControl
 					try {
 						list [0].Repository.Revert (list.Paths, true, Monitor);
 					} catch (Exception ex) {
-						Monitor.ReportError (ex.Message, null);
 						LoggingService.LogError ("Revert operation failed", ex);
+						Monitor.ReportError (ex.Message, null);
 						return;
 					}
 				}

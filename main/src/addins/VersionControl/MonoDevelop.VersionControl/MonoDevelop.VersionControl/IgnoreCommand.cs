@@ -82,8 +82,8 @@ namespace MonoDevelop.VersionControl
 					try {
 						list [0].Repository.Ignore (list.Paths);
 					} catch (Exception ex) {
+						LoggingService.LogError ("Ignore operation failed", ex);
 						Monitor.ReportError (ex.Message, null);
-						LoggingService.LogError ("Unlock operation failed", ex);
 						return;
 					}
 				}
@@ -143,8 +143,15 @@ namespace MonoDevelop.VersionControl
 
 			protected override void Run ()
 			{
-				foreach (VersionControlItemList list in items.SplitByRepository ())
-					list[0].Repository.Unignore (list.Paths);
+				foreach (VersionControlItemList list in items.SplitByRepository ()) {
+					try {
+						list [0].Repository.Unignore (list.Paths);
+					} catch (Exception ex) {
+						LoggingService.LogError ("Unignore operation failed", ex);
+						Monitor.ReportError (ex.Message, null);
+						return;
+					}
+				}
 
 				Gtk.Application.Invoke ((o, args) => {
 					VersionControlService.NotifyFileStatusChanged (items);
