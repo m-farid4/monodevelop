@@ -29,6 +29,7 @@ using MonoDevelop.Ide;
 using MonoDevelop.Ide.Gui;
 using System.Threading;
 using MonoDevelop.Core;
+using System.Threading.Tasks;
 
 namespace MonoDevelop.VersionControl.Views
 {
@@ -109,7 +110,22 @@ namespace MonoDevelop.VersionControl.Views
 				});
 			});
 		}
-		
+
+
+		public void RunAfterUpdate (Func<Task> act)
+		{
+			if (mre == null) {
+				act ().Ignore ();
+				return;
+			}
+			Task.Run (async delegate {
+				mre.WaitOne ();
+				mre.Dispose ();
+				mre = null;
+				await Runtime.RunInMainThread (act);
+			}).Ignore ();
+			return;
+		}
 		protected virtual void OnUpdated (EventArgs e)
 		{
 			Updated?.Invoke (this, e);

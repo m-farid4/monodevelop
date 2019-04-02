@@ -463,8 +463,8 @@ namespace MonoDevelop.VersionControl.Views
 				DiffView diffView = content as DiffView;
 				if (diffView != null) {
 					doc.Window.SwitchView (i);
-					diffView.ComparisonWidget.info.RunAfterUpdate (delegate {
-						diffView.ComparisonWidget.SetRevision (diffView.ComparisonWidget.OriginalEditor, SelectedRevision.GetPrevious ());
+					diffView.ComparisonWidget.info.RunAfterUpdate (async delegate {
+						diffView.ComparisonWidget.SetRevision (diffView.ComparisonWidget.OriginalEditor, await SelectedRevision.GetPreviousAsync ());
 						diffView.ComparisonWidget.SetRevision (diffView.ComparisonWidget.DiffEditor, SelectedRevision);
 						
 						diffView.ComparisonWidget.DiffEditor.Caret.Location = new DocumentLocation (line, 1);
@@ -494,7 +494,7 @@ namespace MonoDevelop.VersionControl.Views
 
 				changedpathstore.SetValue (iter, colDiff, new string[] { GettextCatalog.GetString ("Loading data...") });
 				var rev = SelectedRevision;
-				ThreadPool.QueueUserWorkItem (delegate {
+				Task.Run (async delegate {
 					string text = "";
 					try {
 						text = info.Repository.GetTextAtRevision (path, rev);
@@ -510,7 +510,7 @@ namespace MonoDevelop.VersionControl.Views
 					}
 					Revision prevRev = null;
 					try {
-						prevRev = rev.GetPrevious ();
+						prevRev = await rev.GetPreviousAsync ();
 					} catch (Exception e) {
 						Application.Invoke ((o2, a2) => {
 							MessageService.ShowError (GettextCatalog.GetString ("Error while getting previous revision."), e);

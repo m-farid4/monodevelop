@@ -37,6 +37,7 @@ using MonoDevelop.Components;
 using MonoDevelop.Components.Commands;
 using MonoDevelop.Ide.Fonts;
 using MonoDevelop.Ide.Editor;
+using System.Threading.Tasks;
 
 namespace MonoDevelop.VersionControl.Views
 {
@@ -488,7 +489,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		
 			[CommandHandler (BlameCommands.ShowDiff)]
-			protected void OnShowDiff ()
+			protected async void OnShowDiff ()
 			{
 				if (menuAnnotation == null)
 					return;
@@ -501,7 +502,7 @@ namespace MonoDevelop.VersionControl.Views
 						var rev = widget.info.History.FirstOrDefault (h => h == menuAnnotation.Revision);
 						if (rev == null)
 							return;
-						diffView.ComparisonWidget.SetRevision (diffView.ComparisonWidget.DiffEditor, rev.GetPrevious ());
+						diffView.ComparisonWidget.SetRevision (diffView.ComparisonWidget.DiffEditor, await rev.GetPreviousAsync ());
 						diffView.ComparisonWidget.SetRevision (diffView.ComparisonWidget.OriginalEditor, rev);
 						break;
 					}
@@ -529,10 +530,14 @@ namespace MonoDevelop.VersionControl.Views
 			}
 
 			[CommandHandler (BlameCommands.ShowBlameBefore)]
-			protected void OnShowBlameBefore ()
+			protected async void OnShowBlameBefore ()
 			{
 				var current = menuAnnotation?.Revision;
-				var rev = current?.GetPrevious () ?? widget.info.History.FirstOrDefault ();
+				Revision rev = null;
+				if (current != null)
+					rev = await current.GetPreviousAsync ();
+				if (rev == null)
+					rev = widget.info.History.FirstOrDefault ();
 				if (rev == null)
 					return;
 
@@ -546,7 +551,7 @@ namespace MonoDevelop.VersionControl.Views
 			{
 				var current = menuAnnotation?.Revision;
 				// If we have a working copy segment or we have a parent commit.
-				cinfo.Enabled = current == null || current.GetPrevious () != null;
+				cinfo.Enabled = current == null || current.GetPreviousAsync () != null;
 			}
 
 			[CommandHandler (BlameCommands.ShowPreviousBlame)]
