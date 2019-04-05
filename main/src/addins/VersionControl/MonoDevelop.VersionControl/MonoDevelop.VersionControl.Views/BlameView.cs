@@ -55,7 +55,7 @@ namespace MonoDevelop.VersionControl.Views
 		}
 		
 		#region IAttachableViewContent implementation
-		protected override void OnSelected ()
+		protected internal override void OnSelected ()
 		{
 			info.Start ();
 			BlameWidget blameWidget = Control.GetNativeWidget<BlameWidget> ();
@@ -72,7 +72,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 
-		protected override void OnDeselected ()
+		protected internal override void OnDeselected ()
 		{
 			var buffer = info.Document.GetContent<MonoDevelop.Ide.Editor.TextEditor> () ;
 			if (buffer != null) {

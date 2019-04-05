@@ -26,6 +26,8 @@
 //
 
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using MonoDevelop.Core;
 
 namespace MonoDevelop.VersionControl
@@ -34,14 +36,17 @@ namespace MonoDevelop.VersionControl
 	
 	public class UnlockCommand
 	{
-		public static bool Unlock (VersionControlItemList items, bool test)
+		public static async Task<bool> UnlockAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			if (!items.All (i => i.VersionInfo.CanUnlock))
-				return false;
+			foreach (var item in items) {
+				var info = await item.GetVersionInfoAsync (cancellationToken);
+				if (!info.CanUnlock)
+					return false;
+			}
 			if (test)
 				return true;
 			
-			new UnlockWorker (items).Start();
+			await new UnlockWorker (items).StartAsync(cancellationToken).ConfigureAwait (false);
 			return true;
 		}
 
@@ -57,7 +62,7 @@ namespace MonoDevelop.VersionControl
 				return GettextCatalog.GetString ("Unlocking...");
 			}
 			
-			protected override void Run ()
+			protected override Task RunAsync ()
 			{
 				foreach (VersionControlItemList list in items.SplitByRepository ())
 					list[0].Repository.Unlock (Monitor, list.Paths);
@@ -66,6 +71,7 @@ namespace MonoDevelop.VersionControl
 					VersionControlService.NotifyFileStatusChanged (items);
 				});
 				Monitor.ReportSuccess (GettextCatalog.GetString ("Unlock operation completed."));
+				return Task.CompletedTask;
 			}
 		}
 	}

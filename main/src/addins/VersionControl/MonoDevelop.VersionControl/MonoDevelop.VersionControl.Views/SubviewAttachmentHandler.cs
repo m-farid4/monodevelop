@@ -41,7 +41,7 @@ namespace MonoDevelop.VersionControl.Views
 			Ide.IdeApp.Workbench.ActiveDocumentChanged += HandleDocumentChanged;
 		}
 
-		static void HandleDocumentChanged (object sender, EventArgs e)
+		static async void HandleDocumentChanged (object sender, EventArgs e)
 		{
 			var document = Ide.IdeApp.Workbench.ActiveDocument;
 			try {
@@ -65,7 +65,7 @@ namespace MonoDevelop.VersionControl.Views
 				if (repo == null)
 					return;
 
-				var versionInfo = repo.GetVersionInfo (document.FileName, VersionInfoQueryFlags.IgnoreCache);
+				var versionInfo = await repo.GetVersionInfoAsync (document.FileName, VersionInfoQueryFlags.IgnoreCache);
 				if (!versionInfo.IsVersioned)
 					return;
 

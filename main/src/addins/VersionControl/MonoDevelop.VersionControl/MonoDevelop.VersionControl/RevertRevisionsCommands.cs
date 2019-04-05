@@ -29,26 +29,28 @@ using System.IO;
 using MonoDevelop.Core;
 using MonoDevelop.Ide.Gui;
 using MonoDevelop.Ide;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace MonoDevelop.VersionControl
 {
 	internal class RevertRevisionsCommands
 	{
-		public static bool RevertRevision (Repository vc, string path, Revision revision, bool test)
+		public static Task<bool> RevertRevisionAsync (Repository vc, string path, Revision revision, bool test, CancellationToken cancellationToken = default)
 		{
-			return RevertRevisions (vc, path, revision, test, false);
+			return RevertRevisionsAsync (vc, path, revision, test, false, cancellationToken);
 		}
 		
-		public static bool RevertToRevision (Repository vc, string path, Revision revision, bool test)
+		public static Task<bool> RevertToRevisionAsync (Repository vc, string path, Revision revision, bool test, CancellationToken cancellationToken = default)
 		{
-			return RevertRevisions (vc, path, revision, test, true);
+			return RevertRevisionsAsync (vc, path, revision, test, true, cancellationToken);
 		}
 		
-		private static bool RevertRevisions (Repository vc, string path, Revision revision, bool test, bool toRevision)
+		private static async Task<bool> RevertRevisionsAsync (Repository vc, string path, Revision revision, bool test, bool toRevision, CancellationToken cancellationToken)
 		{
 			try {
 				if (test) {
-					return (vc.GetVersionInfo (path).CanRevert);
+					return (await vc.GetVersionInfoAsync (path, cancellationToken: cancellationToken)).CanRevert;
 				}
 				
 				string question = GettextCatalog.GetString (
@@ -63,7 +65,7 @@ namespace MonoDevelop.VersionControl
 				                                AlertButton.Cancel, AlertButton.Revert) != AlertButton.Revert)
 					return false;
 
-				new RevertWorker(vc, path, revision, toRevision).Start();
+				await new RevertWorker(vc, path, revision, toRevision).StartAsync(cancellationToken);
 				return true;
 			}
 			catch (Exception ex) {
@@ -95,7 +97,7 @@ namespace MonoDevelop.VersionControl
 					return GettextCatalog.GetString ("Reverting revision {0}...", revision);
 			}
 			
-			protected override void Run ()
+			protected override async Task RunAsync ()
 			{
 				// A revert operation can create or remove a directory, so the directory
 				// check must be done before and after the revert.
@@ -104,12 +106,12 @@ namespace MonoDevelop.VersionControl
 				
 				if (toRevision) {
 					//we discard working changes (we are warning the user), it's the more intuitive action
-					vc.Revert (path, true, Monitor);
+					await vc.RevertAsync (path, true, Monitor);
 					
-					vc.RevertToRevision (path, revision, Monitor);
+					await vc.RevertToRevisionAsync (path, revision, Monitor);
 				}
 				else {
-					vc.RevertRevision (path, revision, Monitor);
+					await vc.RevertRevisionAsync (path, revision, Monitor);
 				}
 				
 				if (!(isDir || Directory.Exists (path)))

@@ -73,15 +73,18 @@ namespace MonoDevelop.VersionControl.Views
 			if (!rerun && alreadyStarted)
 				return;
 			alreadyStarted = true;
-			ThreadPool.QueueUserWorkItem (delegate {
+			Task.Run (async delegate {
+				var versionInfo = await Item.Repository.GetVersionInfoAsync (Item.Path, VersionInfoQueryFlags.IgnoreCache);
+				var history = await Item.Repository.GetHistoryAsync (Item.Path, null);
+
 				lock (updateLock) {
 					try {
-						History      = Item.Repository.GetHistory (Item.Path, null);
-						Item.VersionInfo  = Item.Repository.GetVersionInfo (Item.Path, VersionInfoQueryFlags.IgnoreCache);
+						History = history;
+						Item.VersionInfo  = versionInfo;
 					} catch (Exception ex) {
 						LoggingService.LogError ("Error retrieving history", ex);
 					}
-					
+
 					Runtime.RunInMainThread (delegate {
 						OnUpdated (EventArgs.Empty);
 					});

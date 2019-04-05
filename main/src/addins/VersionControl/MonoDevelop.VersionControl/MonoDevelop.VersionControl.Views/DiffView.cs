@@ -47,7 +47,7 @@ namespace MonoDevelop.VersionControl.Views
 					widget = new DiffWidget (info);
 
 					try {
-						ComparisonWidget.DiffEditor.Document.Text = info.Item.Repository.GetBaseText (info.Item.Path);
+						ComparisonWidget.DiffEditor.Document.Text = info.Item.Repository.GetBaseTextAsync (info.Item.Path).Result;
 					} catch (Exception ex) {
 						var msg = GettextCatalog.GetString ("Error fetching text from repository");
 						MessageService.ShowError (msg, ex);
@@ -98,7 +98,7 @@ namespace MonoDevelop.VersionControl.Views
 			return editor.YToLine (midY);
 		}
 		
-		protected override void OnSelected ()
+		protected internal override void OnSelected ()
 		{
 			info.Start ();
 			if (ComparisonWidget.originalComboBox.Text == GettextCatalog.GetString ("Local"))
@@ -131,7 +131,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 		
-		protected override void OnDeselected ()
+		protected internal override void OnDeselected ()
 		{
 			var sourceEditor = info.Document.GetContent <MonoDevelop.SourceEditor.SourceEditorView> ();
 			if (sourceEditor != null) {

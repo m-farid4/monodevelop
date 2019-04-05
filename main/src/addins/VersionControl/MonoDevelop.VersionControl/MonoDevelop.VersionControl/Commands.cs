@@ -5,6 +5,9 @@ using MonoDevelop.Ide;
 using MonoDevelop.Ide.Gui;
 using MonoDevelop.Core;
 using MonoDevelop.VersionControl.Views;
+using System.Threading;
+using System.Threading.Tasks;
+using System;
 
 namespace MonoDevelop.VersionControl
 {
@@ -31,7 +34,7 @@ namespace MonoDevelop.VersionControl
 		ResolveConflicts
 	}
 	
-	class SolutionVersionControlCommandHandler: CommandHandler
+	abstract class SolutionVersionControlCommandHandler : CommandHandler
 	{
 		static VersionControlItemList GetItems ()
 		{
@@ -53,14 +56,14 @@ namespace MonoDevelop.VersionControl
 			list.Add (new VersionControlItem (repo, wob, wob.BaseDirectory, true, null));
 			return list;
 		}
-		
+
 		protected override void Run ()
 		{
 			VersionControlItemList items = GetItems ();
-			RunCommand (items, false);
+			RunCommandAsync (items, false, default).Ignore ();
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override async Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
 			if (VersionControlService.IsGloballyDisabled) {
 				info.Visible = false;
@@ -68,15 +71,12 @@ namespace MonoDevelop.VersionControl
 			}
 
 			VersionControlItemList items = GetItems ();
-			info.Enabled = items.Count > 0 && RunCommand (items, true);
+			info.Enabled = items.Count > 0 && await RunCommandAsync (items, true, cancelToken);
 		}
-		
-		protected virtual bool RunCommand (VersionControlItemList items, bool test)
-		{
-			return true;
-		}
+
+		protected abstract Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken);
 	}
-	
+
 	class FileVersionControlCommandHandler: CommandHandler
 	{
 		protected static VersionControlItemList GetItems ()
@@ -105,14 +105,14 @@ namespace MonoDevelop.VersionControl
 			
 			return new VersionControlItem (repo, project, doc.FileName, false, null);
 		}
-		
+
 		protected sealed override void Run ()
 		{
 			VersionControlItemList items = GetItems ();
-			RunCommand (items, false);
+			RunCommandAsync (items, false, default);
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override async Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
 			if (VersionControlService.IsGloballyDisabled) {
 				info.Visible = false;
@@ -120,139 +120,139 @@ namespace MonoDevelop.VersionControl
 			}
 
 			VersionControlItemList items = GetItems ();
-			info.Enabled = items.Count > 0 && RunCommand (items, true);
+			info.Enabled = items.Count > 0 && await RunCommandAsync (items, true, cancelToken);
 		}
 		
-		protected virtual bool RunCommand (VersionControlItemList items, bool test)
+		protected virtual Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return true;
+			return Task.FromResult (true);
 		}
 	}	
 
 	class UpdateCommandHandler: SolutionVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return UpdateCommand.Update (items, test);
+			return UpdateCommand.UpdateAsync (items, test, cancellationToken);
 		}
 	}
 	
 	class StatusCommandHandler: SolutionVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return StatusView.Show (items, test, true);
+			return StatusView.ShowAsync (items, test, true);
 		}
 	}
 
 	class AddCommandHandler: FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return AddCommand.Add (items, test);
+			return AddCommand.AddAsync (items, test, cancellationToken);
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Add File");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 	
 	class RemoveCommandHandler: FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return RemoveCommand.Remove (items, test);
+			return RemoveCommand.RemoveAsync (items, test, cancellationToken);
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Remove File");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 	
 	class RevertCommandHandler: FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return RevertCommand.Revert (items, test);
+			return RevertCommand.RevertAsync (items, test, cancellationToken);
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Revert File");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 	
 	class LockCommandHandler: FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return LockCommand.Lock (items, test);
+			return LockCommand.LockAsync (items, test, cancellationToken);
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Lock File");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 	
 	class UnlockCommandHandler: FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return UnlockCommand.Unlock (items, test);
+			return UnlockCommand.UnlockAsync (items, test, cancellationToken);
 		}
-		
-		protected override void Update (CommandInfo info)
+
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Unlock File");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 
 	class IgnoreCommandHandler : FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return IgnoreCommand.Ignore (items, test);
+			return IgnoreCommand.IgnoreAsync (items, test, cancellationToken);
 		}
 
-		protected override void Update (CommandInfo info)
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Add to ignore list");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 
 	class UnignoreCommandHandler : FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
-			return UnignoreCommand.Unignore (items, test);
+			return UnignoreCommand.UnignoreAsync (items, test, cancellationToken);
 		}
 
-		protected override void Update (CommandInfo info)
+		protected override Task UpdateAsync (CommandInfo info, CancellationToken cancelToken)
 		{
-			base.Update (info);
 			info.Text = GettextCatalog.GetString ("Remove from ignore list");
+			return base.UpdateAsync (info, cancelToken);
 		}
 	}
 
 	class CurrentFileViewHandler<T> : FileVersionControlCommandHandler
 	{
-		protected override bool RunCommand (VersionControlItemList items, bool test)
+		protected override Task<bool> RunCommandAsync (VersionControlItemList items, bool test, CancellationToken cancellationToken)
 		{
 			if (test)
-				return true;
+				return Task.FromResult (true);
 
 			var window = IdeApp.Workbench.ActiveDocument.Window;
 			window.SwitchView (window.FindView<T> ());
-			return true;
+			return Task.FromResult (true);
 		}
 	}
 

@@ -6,6 +6,7 @@ using MonoDevelop.Components;
 using MonoDevelop.Components.Commands;
 using MonoDevelop.Ide;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace MonoDevelop.VersionControl.Views
 {
@@ -24,46 +25,50 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 
-		public static bool CanShow (VersionControlItemList items, Revision since)
-		{
-			return items.All (i => i.VersionInfo.CanLog);
-		}
-		
 		VersionControlDocumentInfo info;
 		public LogView (VersionControlDocumentInfo info) : base (GettextCatalog.GetString ("Log"), GettextCatalog.GetString ("Shows the source control log for the current file"))
 		{
 			this.info = info;
 		}
 		
-		void CreateControlFromInfo ()
+		async void CreateControlFromInfo ()
 		{
-			var lw = new LogWidget (info);
-			
-			widget = lw;
-			info.Updated += OnInfoUpdated;
-			lw.History = this.info.History;
-			vinfo   = this.info.Item.VersionInfo;
-		
-			if (WorkbenchWindow != null)
-				widget.SetToolbar (WorkbenchWindow.GetToolbar (this));
+			try {
+				var lw = new LogWidget (info);
+
+				widget = lw;
+				info.Updated += OnInfoUpdated;
+				lw.History = this.info.History;
+				vinfo = await this.info.Item.GetVersionInfoAsync ();
+
+				if (WorkbenchWindow != null)
+					widget.SetToolbar (WorkbenchWindow.GetToolbar (this));
+			} catch (Exception e) {
+				LoggingService.LogInternalError (e);
+			}
 		}
 
-		void OnInfoUpdated (object sender, EventArgs e)
+		async void OnInfoUpdated (object sender, EventArgs e)
 		{
-			widget.History = this.info.History;
-			vinfo   = this.info.Item.VersionInfo;
+			try {
+				widget.History = this.info.History;
+				vinfo = await info.Item.GetVersionInfoAsync ();
+			} catch (Exception ex) {
+				LoggingService.LogInternalError (ex);
+			}
 		}
 
 		[Obsolete]
 		public LogView (string filepath, bool isDirectory, Revision [] history, Repository vc) 
 			: base (Path.GetFileName (filepath) + " Log")
 		{
-			try {
-				this.vinfo = vc.GetVersionInfo (filepath, VersionInfoQueryFlags.IgnoreCache);
-			}
-			catch (Exception ex) {
-				MessageService.ShowError (GettextCatalog.GetString ("Version control command failed."), ex);
-			}
+			Task.Run (async () => {
+				try {
+					this.vinfo = await vc.GetVersionInfoAsync (filepath, VersionInfoQueryFlags.IgnoreCache);
+				} catch (Exception ex) {
+					MessageService.ShowError (GettextCatalog.GetString ("Version control command failed."), ex);
+				}
+			});
 			
 			// Widget setup
 			VersionControlDocumentInfo info  =new VersionControlDocumentInfo (null, null, vc);
@@ -112,7 +117,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 
-		protected override void OnSelected ()
+		protected internal override void OnSelected ()
 		{
 			Init ();
 		}

@@ -26,6 +26,8 @@
 using MonoDevelop.Components;
 using MonoDevelop.Core;
 using System.Linq;
+using MonoDevelop.Ide;
+using System.Threading.Tasks;
 
 namespace MonoDevelop.VersionControl.Views
 {
@@ -54,20 +56,26 @@ namespace MonoDevelop.VersionControl.Views
 
 		void RefreshContent ()
 		{
-			var isConflicted = info?.Item?.VersionInfo?.Status.HasFlag (VersionStatus.Conflicted) ?? false;
-			if (isConflicted) {
-				if (widget == null) {
-					widget = new MergeWidget ();
-					widget.Load (info);
+			Task.Run (async () => {
+				var item = info?.Item;
+				if (item == null) return false;
+				var isConflicted = (await item.GetVersionInfoAsync ())?.Status.HasFlag (VersionStatus.Conflicted) ?? false;
+				return isConflicted;
+			}).ContinueWith (t => {
+				if (t.Result) {
+					if (widget == null) {
+						widget = new MergeWidget ();
+						widget.Load (info);
+					}
+					if (widgetContainer.Content != widget) {
+						widgetContainer.Content = widget;
+					}
+				} else {
+					if (widgetContainer.Content != NoMergeConflictsLabel) {
+						widgetContainer.Content = NoMergeConflictsLabel;
+					}
 				}
-				if (widgetContainer.Content != widget) {
-					widgetContainer.Content = widget;
-				}
-			} else {
-				if (widgetContainer.Content != NoMergeConflictsLabel) {
-					widgetContainer.Content = NoMergeConflictsLabel;
-				}
-			}
+			}, Runtime.MainTaskScheduler);
 		}
 
 		void FileService_FileChanged (object sender, FileEventArgs e)
@@ -88,7 +96,7 @@ namespace MonoDevelop.VersionControl.Views
 			RefreshMergeEditor ();
 		}
 
-		protected override void OnSelected ()
+		protected internal override void OnSelected ()
 		{
 			info.Start ();
 			RefreshContent ();
@@ -111,7 +119,7 @@ namespace MonoDevelop.VersionControl.Views
 
 		void ClearContainer () => widgetContainer.Clear ();
 
-		protected override void OnDeselected () => ClearContainer ();
+		protected internal override void OnDeselected () => ClearContainer ();
 
 		public override void Dispose ()
 		{
