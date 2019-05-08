@@ -98,7 +98,7 @@ namespace MonoDevelop.VersionControl.Views
 			return editor.YToLine (midY);
 		}
 		
-		protected internal override void OnSelected ()
+		protected override void OnSelected ()
 		{
 			info.Start ();
 			if (ComparisonWidget.originalComboBox.Text == GettextCatalog.GetString ("Local"))
@@ -131,7 +131,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 		
-		protected internal override void OnDeselected ()
+		protected override void OnDeselected ()
 		{
 			var sourceEditor = info.Document.GetContent <MonoDevelop.SourceEditor.SourceEditorView> ();
 			if (sourceEditor != null) {

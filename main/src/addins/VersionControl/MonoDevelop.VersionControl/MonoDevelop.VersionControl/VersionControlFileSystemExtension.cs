@@ -125,9 +125,10 @@ namespace MonoDevelop.VersionControl
 			FileUpdateEventArgs args = new FileUpdateEventArgs ();
 			foreach (var file in files) {
 				var rep = GetRepository (file);
-				if (rep != null) {
+				if (rep != null && !rep.IsDisposed) {
 					rep.ClearCachedVersionInfo (file);
-					args.Add (new FileUpdateEventInfo (rep, file, false));
+					if (rep.TryGetFileUpdateEventInfo (rep, file, out var eventInfo))
+						args.Add (eventInfo);
 				}
 			}
 			VersionControlService.NotifyFileStatusChanged (args);

@@ -96,7 +96,7 @@ namespace MonoDevelop.VersionControl.Views
 			RefreshMergeEditor ();
 		}
 
-		protected internal override void OnSelected ()
+		protected override void OnSelected ()
 		{
 			info.Start ();
 			RefreshContent ();
@@ -119,7 +119,7 @@ namespace MonoDevelop.VersionControl.Views
 
 		void ClearContainer () => widgetContainer.Clear ();
 
-		protected internal override void OnDeselected () => ClearContainer ();
+		protected override void OnDeselected () => ClearContainer ();
 
 		public override void Dispose ()
 		{

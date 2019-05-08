@@ -117,7 +117,7 @@ namespace MonoDevelop.VersionControl.Views
 			}
 		}
 
-		protected internal override void OnSelected ()
+		protected override void OnSelected ()
 		{
 			Init ();
 		}
