@@ -127,7 +127,16 @@ namespace MonoDevelop.Ide.Desktop
 				LoggingService.LogError ("Failed to add item to recent files list.", e);
 			}
 		}
-		
+
+		public override void ReorderProject (int from, int to)
+		{
+			try {
+				ReorderFavoriteFile (from, to);
+			} catch (Exception e) {
+				LoggingService.LogInternalError ("Failed to reorder favorite item from recent files list.", e);
+			}
+		}
+
 		public override void NotifyFileRemoved (string fileName)
 		{
 			try {
@@ -199,6 +208,7 @@ namespace MonoDevelop.Ide.Desktop
 		public abstract void ClearFiles ();
 		public abstract void AddFile (string fileName, string displayName);
 		public abstract void AddProject (string fileName, string displayName);
+		public abstract void ReorderProject (int from, int to);
 		public abstract void NotifyFileRemoved (string filename);
 		public abstract void NotifyFileRenamed (string oldName, string newName);
 		
@@ -222,6 +232,19 @@ namespace MonoDevelop.Ide.Desktop
 				// Nothing has changed - no need to save the properties.
 				return;
 			}
+
+			PropertyService.Set (FavoritesConfigKey, favoriteFiles);
+			PropertyService.SaveProperties ();
+		}
+
+		internal void ReorderFavoriteFile (int from, int to)
+		{
+			if (!favoriteFiles.Any ())
+				return;
+
+			string item = favoriteFiles [from];
+			favoriteFiles.RemoveAt (from);
+			favoriteFiles.Insert (to, item);
 
 			PropertyService.Set (FavoritesConfigKey, favoriteFiles);
 			PropertyService.SaveProperties ();
