@@ -48,6 +48,7 @@ namespace MonoDevelop.VersionControl.Git
 		public bool AgentUsed { get; set; }
 		public int KeyUsed { get; set; }
 		public bool NativePasswordUsed { get; set; }
+		public bool HasError { get; set; }
 		public Dictionary<string, int> KeyForUrl = new Dictionary<string, int> ();
 		public Dictionary<string, bool> AgentForUrl = new Dictionary<string, bool> ();
 
@@ -108,7 +109,7 @@ namespace MonoDevelop.VersionControl.Git
 			}
 		}
 
-		public static Credentials TryGet (string url, string userFromUrl, SupportedCredentialTypes types, GitCredentialsType type)
+		public static Credentials TryGet (string url, string userFromUrl, SupportedCredentialTypes types, GitCredentialsType type, bool isRetry = false)
 		{
 			bool result = false;
 			Uri uri = null;
@@ -117,8 +118,9 @@ namespace MonoDevelop.VersionControl.Git
 			if (!credState.TryGetValue (type, out state))
 				credState [type] = state = new GitCredentialsState ();
 			state.UrlUsed = url;
-
-			// We always need to run the TryGet* methods as we need the passphraseItem/passwordItem populated even
+			state.HasError = isRetry;
+			
+            // We always need to run the TryGet* methods as we need the passphraseItem/passwordItem populated even
 			// if the password store contains an invalid password/no password
 			if ((types & SupportedCredentialTypes.UsernamePassword) != 0) {
 				if (Uri.TryCreate (url, UriKind.RelativeOrAbsolute, out uri)) {
@@ -217,7 +219,7 @@ namespace MonoDevelop.VersionControl.Git
 			}
 
 			if (!result) {
-				result = GetCredentials (url, types, cred);
+				result = GetCredentials (url, types, cred, state);
 			}
 
 			if (result) {
@@ -248,9 +250,9 @@ namespace MonoDevelop.VersionControl.Git
 			return result;
 		}
 
-		static bool GetCredentials (string uri, SupportedCredentialTypes type, Credentials cred)
+		static bool GetCredentials (string uri, SupportedCredentialTypes type, Credentials cred, GitCredentialsState state)
 		{
-			return XwtCredentialsDialog.Run (uri, type, cred).Result;
+			return XwtCredentialsDialog.Run (uri, type, cred, null, state.HasError).Result;
 		}
 
 		internal static bool KeyHasPassphrase (string key)
@@ -322,6 +324,7 @@ namespace MonoDevelop.VersionControl.Git
 			state.UrlUsed = null;
 			state.AgentUsed = false;
 			state.KeyUsed = -1;
+			state.HasError = false;
 		}
 	}
 }

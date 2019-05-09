@@ -39,12 +39,13 @@ namespace MonoDevelop.VersionControl.Git
 		internal const int DefaultlLabelWidth = 100;
 		internal const int InputContainerContainerSpacing = 10;
 		readonly DialogButton okButton;
+		readonly Label labelError;
 
 		readonly ICredentialsWidget credentialsWidget;
 
 		const string credentialMarkupFormat = "<b>{0}</b>";
 
-		public XwtCredentialsDialog (string uri, SupportedCredentialTypes supportedCredential, Credentials credentials)
+		public XwtCredentialsDialog (string uri, SupportedCredentialTypes supportedCredential, Credentials credentials, bool hasError)
 		{
 			Title = GettextCatalog.GetString ("Git Credentials");
 			Resizable = false;
@@ -74,12 +75,32 @@ namespace MonoDevelop.VersionControl.Git
 			credentialsWidget.CredentialsChanged += OnCredentialsChanged;
 			mainContainer.PackStart (credentialsWidget.Widget, marginTop: InputContainerContainerSpacing);
 
-			//Buttons
+			labelError = new Label ();
+			mainContainer.PackStart (labelError);
+			
+            //Buttons
 			Buttons.Add (new DialogButton (Command.Cancel));
 			Buttons.Add (okButton = new DialogButton (Command.Ok));
 			DefaultCommand = Command.Ok;
 
 			okButton.Sensitive = credentialsWidget.CredentialsAreValid;
+
+			UpdateStatus (uri, supportedCredential, hasError);
+		}
+
+		void UpdateStatus (string uri, SupportedCredentialTypes supportedCredential, bool hasError)
+		{
+			if (hasError) {
+				string errorMessage = GettextCatalog.GetString ("Invalid username or password for repository '{0}'. Please try again.", uri);
+				if (supportedCredential.HasFlag (SupportedCredentialTypes.Ssh))
+					errorMessage = GettextCatalog.GetString ("Invalid key for repository '{0}'. Please try again.", uri);
+
+				labelError.Markup = "<span color='" + Ide.Gui.Styles.ErrorForegroundColor.ToHexString (false) + "'>" + errorMessage + "</span>";
+				labelError.Show ();
+				okButton.Label = GettextCatalog.GetString ("Retry");
+				okButton.Sensitive = false;
+			} else
+				labelError.Hide ();
 		}
 
 		void OnCredentialsChanged (object sender, EventArgs e)
@@ -87,13 +108,13 @@ namespace MonoDevelop.VersionControl.Git
 			okButton.Sensitive = credentialsWidget.CredentialsAreValid;
 		}
 
-		public static Task<bool> Run (string url, SupportedCredentialTypes types, Credentials cred, Components.Window parentWindow = null)
+		public static Task<bool> Run (string url, SupportedCredentialTypes types, Credentials cred, Components.Window parentWindow = null, bool hasError = false)
 		{
 			return Runtime.RunInMainThread (() => {
 				var engine = Platform.IsMac ? Toolkit.NativeEngine : Toolkit.CurrentEngine;
 				var response = false;
 				engine.Invoke (() => {
-					using (var xwtDialog = new XwtCredentialsDialog (url, types, cred)) {
+					using (var xwtDialog = new XwtCredentialsDialog (url, types, cred, hasError)) {
 						response = xwtDialog.Run (parentWindow ?? IdeServices.DesktopService.GetFocusedTopLevelWindow ()) == Command.Ok;
 					}
 				});
