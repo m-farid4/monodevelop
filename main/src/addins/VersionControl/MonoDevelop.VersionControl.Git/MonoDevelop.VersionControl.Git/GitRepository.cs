@@ -1256,17 +1256,56 @@ namespace MonoDevelop.VersionControl.Git
 				return;
 
 			var repo = (GitRepository)changeSet.Repository;
-			RunBlockingOperation (() => {
-				LibGit2Sharp.Commands.Stage (RootRepository, changeSet.Items.Select (i => i.LocalPath).ToPathStrings ());
+            var addedFiles = GetAddedLocalPathItems (changeSet);
 
-				if (changeSet.ExtendedProperties.Contains ("Git.AuthorName"))
-					RootRepository.Commit (message, new Signature (
-						(string)changeSet.ExtendedProperties ["Git.AuthorName"],
-						(string)changeSet.ExtendedProperties ["Git.AuthorEmail"],
-						DateTimeOffset.Now), sig);
-				else
-					RootRepository.Commit (message, sig, sig);
+			RunBlockingOperation (() => {
+				try {
+					// Unstage added files not included in the changeSet
+					if (addedFiles.Any ())
+						LibGit2Sharp.Commands.Unstage (RootRepository, addedFiles);
+				} catch (Exception ex) {
+					LoggingService.LogInternalError ("Failed to commit.", ex);
+					return;
+				}
+				try {
+					// Commit
+					LibGit2Sharp.Commands.Stage (RootRepository, changeSet.Items.Select (i => i.LocalPath).ToPathStrings ());
+
+					if (changeSet.ExtendedProperties.Contains ("Git.AuthorName"))
+						RootRepository.Commit (message, new Signature (
+							(string)changeSet.ExtendedProperties ["Git.AuthorName"],
+							(string)changeSet.ExtendedProperties ["Git.AuthorEmail"],
+							DateTimeOffset.Now), sig);
+					else
+						RootRepository.Commit (message, sig, sig);
+				} catch (Exception ex) {
+					LoggingService.LogInternalError ("Failed to commit.", ex);
+				} finally {
+					// Always at the end, stage again the unstage added files not included in the changeSet
+					if (addedFiles.Any ())
+						LibGit2Sharp.Commands.Stage (RootRepository, addedFiles);
+				}
 			});
+		}
+
+		List<string> GetAddedLocalPathItems (ChangeSet changeSet)
+		{
+			List<string> addedLocalPathItems = new List<string> ();
+			try {
+				var directoryVersionInfo = GetDirectoryVersionInfo (changeSet.BaseLocalPath, null, false, true);
+				const VersionStatus addedStatus = VersionStatus.Versioned | VersionStatus.ScheduledAdd;
+				var directoryVersionInfoItems = directoryVersionInfo.Where (vi => vi.Status == addedStatus);
+
+				foreach (var item in from item in directoryVersionInfoItems
+									 from changeSetItem in changeSet.Items
+									 where item.LocalPath != changeSetItem.LocalPath
+									 select item)
+					addedLocalPathItems.Add (item.LocalPath);
+			} catch (Exception ex) {
+				LoggingService.LogInternalError ("Could not get added VersionInfo items.", ex);
+			}
+
+			return addedLocalPathItems;
 		}
 
 		public bool IsUserInfoDefault ()
