@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Shamelessly lifted from Banshee's build process
- 	
+
 pushd $(dirname $0) &>/dev/null
 
 DMG_APP=$1
@@ -31,7 +31,7 @@ MOUNT_POINT="$VOLUME_NAME.mounted"
 
 rm -f "$DMG_FILE"
 rm -f "$DMG_FILE.master"
- 	
+
 # Compute an approximated image size in MB, and bloat by double
 # codesign adds a unknown amount of extra size requirements and there are some
 # files where the additional size required is even more "unknown". doubling
@@ -52,7 +52,7 @@ echo "Populating image..."
 # such as compatibility-check
 ditto "$DMG_APP" "$MOUNT_POINT/$DMG_APP"
 
-# This won't result in any deletions 
+# This won't result in any deletions
 #find "$MOUNT_POINT" -type d -iregex '.*\.svn$' &>/dev/null | xargs rm -rf
 
 pushd "$MOUNT_POINT" &>/dev/null
@@ -92,4 +92,4 @@ rm -rf "$MOUNT_POINT"
 
 echo "Done."
 
-popd &>/dev/null 
+popd &>/dev/null
