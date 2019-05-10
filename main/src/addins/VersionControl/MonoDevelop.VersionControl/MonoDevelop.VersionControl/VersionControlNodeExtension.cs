@@ -25,7 +25,9 @@ namespace MonoDevelop.VersionControl
 			return typeof(ProjectFile).IsAssignableFrom (dataType)
 				|| typeof(SystemFile).IsAssignableFrom (dataType)
 				|| typeof(ProjectFolder).IsAssignableFrom (dataType)
-				|| typeof(WorkspaceObject).IsAssignableFrom (dataType);
+				|| typeof(WorkspaceObject).IsAssignableFrom (dataType) 
+                || typeof (SolutionFolder).IsAssignableFrom (dataType)
+				|| typeof (SolutionFolderFileNode).IsAssignableFrom (dataType);
 		}
 		
 		protected override void Initialize ()

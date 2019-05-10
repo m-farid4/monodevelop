@@ -17,6 +17,7 @@ namespace MonoDevelop.VersionControl
 	[DataItem (FallbackType=typeof(UnknownRepository))]
 	public abstract class Repository: IDisposable
 	{
+		FilePath filePath;
 		string name;
 		VersionControlSystem vcs;
 		
@@ -25,10 +26,12 @@ namespace MonoDevelop.VersionControl
 
 		int references;
 
-		public FilePath RootPath
-		{
-			get;
-			protected set;
+		public FilePath RootPath {
+			get { return filePath; }
+			protected set {
+				filePath = value;
+				InitFileWatcher (filePath);
+			}
 		}
 
 		internal FilePath RepositoryPath { get; set; }
@@ -97,7 +100,7 @@ namespace MonoDevelop.VersionControl
 		protected virtual void Dispose (bool disposing)
 		{
 			IsDisposed = true;
-
+			ShutdownFileWatcher ();
 			if (queryRunning) {
 				lock (queryLock) {
 					fileQueryQueue.Clear ();
@@ -1085,6 +1088,18 @@ namespace MonoDevelop.VersionControl
 		public virtual bool GetFileIsText (FilePath path)
 		{
 			return IdeServices.DesktopService.GetFileIsText (path);
+		}
+
+		void InitFileWatcher (FilePath directoryPath)
+		{
+			FileWatcherService.WatchDirectories (this, new HashSet<FilePath> {
+				directoryPath
+			}).Ignore ();
+		}
+
+		void ShutdownFileWatcher ()
+		{
+			FileWatcherService.WatchDirectories (this, null).Ignore ();
 		}
 	}
 	
