@@ -2226,7 +2226,7 @@ namespace MonoDevelop.Components.Commands
 			if (!hasFocus) {
 				var nsWindow = AppKit.NSApplication.SharedApplication.KeyWindow;
 				hasFocus = nsWindow != null;
-                 if (hasFocus) {
+                if (hasFocus) {
 					lastFocused = win = nsWindow;
 				}
 			} else {
