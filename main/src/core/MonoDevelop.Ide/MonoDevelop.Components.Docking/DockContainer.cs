@@ -309,7 +309,8 @@ namespace MonoDevelop.Components.Docking
 						s.Show ();
 					Add (s.NativeWidget as Widget);
 				} else {
-                    var splitter = new SplitterWidget ();
+
+                    var splitter = new MacSplitterWidget (this);
 					var s = new SplitterWidgetWrapper (splitter);
 					splitters.Add (s);
 					s.Show ();
