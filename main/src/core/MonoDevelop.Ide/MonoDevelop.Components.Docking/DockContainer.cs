@@ -48,7 +48,7 @@ namespace MonoDevelop.Components.Docking
 		List<TabStrip> notebooks = new List<TabStrip> ();
 		List<DockItem> items = new List<DockItem> ();
 
-		List<SplitterWidget> splitters = new List<SplitterWidget> ();
+		List<SplitterWidgetWrapper> splitters = new List<SplitterWidgetWrapper> ();
 
 		bool needsRelayout = true;
 
@@ -173,7 +173,7 @@ namespace MonoDevelop.Components.Docking
 				a.Height = 5;
 				a.Y -= 2;
 			}
-			s.SizeAllocate (a);
+			s.SetSize (a);
 			s.Init (grp, index);
 		}
 		
@@ -190,7 +190,7 @@ namespace MonoDevelop.Components.Docking
 			}
 			foreach (var s in splitters)
 				if (s.Parent != null)
-					callback (s);
+					callback (s.NativeWidget as Widget);
 		}
 		
 		protected override bool OnExposeEvent (Gdk.EventExpose evnt)
@@ -288,7 +288,7 @@ namespace MonoDevelop.Components.Docking
 			for (int n=0; n < splitters.Count; n++) {
 				var s = splitters [n];
 				if (s.Parent != null)
-					Remove (s);
+					Remove (s.NativeWidget as Widget);
 			}
 
 			// Hide the splitters that are not required
@@ -307,12 +307,13 @@ namespace MonoDevelop.Components.Docking
 					var s = splitters [n];
 					if (!s.Visible)
 						s.Show ();
-					Add (s);
+					Add (s.NativeWidget as Widget);
 				} else {
-					var s = new SplitterWidget ();
+                    var splitter = new SplitterWidget ();
+					var s = new SplitterWidgetWrapper (splitter);
 					splitters.Add (s);
 					s.Show ();
-					Add (s);
+					Add (s.NativeWidget as Widget);
 				}
 			}
 		}
@@ -490,7 +491,7 @@ namespace MonoDevelop.Components.Docking
 			}
 		}
 		
-		internal class SplitterWidget: EventBox
+		internal class SplitterWidget: EventBox, ISplitterWidget
 		{
 			static Gdk.Cursor hresizeCursor = new Gdk.Cursor (CursorType.SbHDoubleArrow);
 			static Gdk.Cursor vresizeCursor = new Gdk.Cursor (CursorType.SbVDoubleArrow);
@@ -572,6 +573,11 @@ namespace MonoDevelop.Components.Docking
 					}
 				}
 				return base.OnMotionNotifyEvent (e);
+			}
+
+			public void SetSize (Rectangle rect)
+			{
+				OnSizeAllocated (rect);
 			}
 		}
 	}
