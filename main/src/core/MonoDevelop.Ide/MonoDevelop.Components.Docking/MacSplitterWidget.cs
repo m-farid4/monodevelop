@@ -58,10 +58,20 @@ namespace MonoDevelop.Components.Docking
 			set => Hidden = !value;
 		 }
 
+		bool focused;
+
 		public override bool ResignFirstResponder ()
 		{
-			NSCursor.PointingHandCursor.Set ();
+			focused = false;
+			NSCursor.ArrowCursor.Set ();
 			return base.ResignFirstResponder ();
+		}
+
+		public override bool BecomeFirstResponder ()
+		{
+			focused = true;
+			NSCursor.OpenHandCursor.Set ();
+			return base.BecomeFirstResponder ();
 		}
 
 		public override void UpdateTrackingAreas ()
@@ -87,16 +97,20 @@ namespace MonoDevelop.Components.Docking
 		public override void MouseDown (NSEvent theEvent)
 		{
 			NSCursor.ClosedHandCursor.Set ();
-			var mousePoint = ConvertPointFromView (theEvent.LocationInWindow, null);
+		}
 
-			dragging = true;
-			dragPos = (dockGroup.Type == DockGroupType.Horizontal) ? (int)mousePoint.X : (int)mousePoint.Y;
-			var obj = dockGroup.VisibleObjects [dockIndex];
-			dragSize = (dockGroup.Type == DockGroupType.Horizontal) ? obj.Allocation.Width : obj.Allocation.Height;
+		public override void MouseMoved (NSEvent theEvent)
+		{
+			base.MouseMoved (theEvent);
 		}
 
 		public override void MouseUp (NSEvent theEvent)
 		{
+			dragging = false;
+
+			if (focused) {
+				NSCursor.OpenHandCursor.Set ();
+			}
 			base.MouseUp (theEvent);
 		}
 
@@ -104,21 +118,21 @@ namespace MonoDevelop.Components.Docking
 		bool dragging;
 		public override void MouseDragged (NSEvent theEvent)
 		{
-			point = ConvertPointFromView (theEvent.LocationInWindow, null);
-			
+			dragging = true;
+			//point = ConvertPointFromView (theEvent.LocationInWindow, null);
+			////moving
+			////dragin started
+			//dragPos = (dockGroup.Type == DockGroupType.Horizontal) ? (int)point.X : (int)point.Y;
+			//var obj = dockGroup.VisibleObjects [dockIndex];
+			//dragSize = (dockGroup.Type == DockGroupType.Horizontal) ? obj.Allocation.Width : obj.Allocation.Height;
+
 			base.MouseDragged (theEvent);
 		}
 
 		public void SetSize (Rectangle rect)
 		{
-			WidthRequested = rect.Width;
-			HeightRequested = rect.Height;
-			InvalidateIntrinsicContentSize ();
+			Frame = new CGRect (0, 0, rect.Width, rect.Height);
 		}
-
-		public override CGSize IntrinsicContentSize => new CGSize (WidthRequested, HeightRequested);
-
-		int WidthRequested, HeightRequested;
 
 		public void Hide ()
 		{

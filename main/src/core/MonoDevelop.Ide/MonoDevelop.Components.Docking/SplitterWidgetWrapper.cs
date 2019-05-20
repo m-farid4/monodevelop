@@ -77,7 +77,5 @@ namespace MonoDevelop.Components.Docking
 		{
 			NativeWidget.Hide ();
 		}
-
 	}
-
 }

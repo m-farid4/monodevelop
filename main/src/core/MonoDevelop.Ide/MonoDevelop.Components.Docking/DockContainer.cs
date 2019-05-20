@@ -40,7 +40,76 @@ using MonoDevelop.Ide.Gui;
 
 namespace MonoDevelop.Components.Docking
 {
-	class DockContainer: Container
+	class SplitterContainerWidget : NativeContainerWidget<MacSplitterWidget>, ISplitterWidget
+	{
+		public SplitterContainerWidget (IntPtr raw) : base (raw)
+		{
+		}
+
+		protected SplitterContainerWidget ()
+		{
+		}
+
+		protected SplitterContainerWidget (GLib.GType gtype) : base (gtype)
+		{
+		}
+
+		public void Init (DockGroup grp, int index)
+		{
+			NativeContent?.Init (grp, index);
+		}
+
+		public void SetSize (Rectangle rect)
+		{
+			OnSizeAllocated (rect);
+			NativeContent?.SetSize (rect);
+		}
+
+		protected override void OnSizeAllocated (Rectangle allocation)
+		{
+			//Accessible.SetOrientation (allocation.Height > allocation.Width ? Orientation.Vertical : Orientation.Horizontal);
+			base.OnSizeAllocated (allocation);
+		}
+	}
+
+	class NativeContainerWidget<T> : Gtk.Widget
+	{
+		public NativeContainerWidget (IntPtr raw) : base (raw)
+		{
+
+		}
+
+		protected NativeContainerWidget ()
+		{
+
+		}
+
+		protected NativeContainerWidget (GLib.GType gtype) : base (gtype)
+		{
+
+		}
+
+		public T NativeContent { get; private set; }
+		public virtual void SetNativeContent (T widget)
+		{
+			this.NativeContent = widget;
+
+			CanFocus = true;
+			Sensitive = true;
+		}
+
+		bool disposing = false;
+		public override void Dispose ()
+		{
+			if (!disposing) {
+				disposing = true;
+				NativeContent = default (T);
+			}
+			base.Dispose ();
+		}
+	}
+
+	class DockContainer : Container
 	{
 		DockLayout layout;
 		DockFrame frame;
@@ -310,8 +379,16 @@ namespace MonoDevelop.Components.Docking
 					Add (s.NativeWidget as Widget);
 				} else {
 
-                    var splitter = new MacSplitterWidget (this);
-					var s = new SplitterWidgetWrapper (splitter);
+					SplitterWidgetWrapper s = null;
+#if MAC
+					var splitter = new MacSplitterWidget (this);
+					var widget = Mac.GtkMacInterop.NSViewToGtkWidget<SplitterContainerWidget> (splitter);
+					widget.SetNativeContent (splitter);
+
+#else
+                     var widget = new SplitterWidget ();
+#endif
+					s = new SplitterWidgetWrapper (widget);
 					splitters.Add (s);
 					s.Show ();
 					Add (s.NativeWidget as Widget);
