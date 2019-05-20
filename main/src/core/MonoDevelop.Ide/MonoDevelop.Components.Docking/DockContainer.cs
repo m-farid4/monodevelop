@@ -27,8 +27,6 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-
-
 using System;
 using System.Collections.Generic;
 using Gtk;
@@ -62,7 +60,6 @@ namespace MonoDevelop.Components.Docking
 		public void SetSize (Rectangle rect)
 		{
 			OnSizeAllocated (rect);
-			NativeContent?.SetSize (rect);
 		}
 
 		protected override void OnSizeAllocated (Rectangle allocation)

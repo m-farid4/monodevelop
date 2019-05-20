@@ -39,7 +39,7 @@ using CoreGraphics;
 
 namespace MonoDevelop.Components.Docking
 {
-	class MacSplitterWidget : NSView, ISplitterWidget
+	class MacSplitterWidget : NSView
 	{
 		DockGroup dockGroup;
 		int dockIndex;
@@ -49,31 +49,23 @@ namespace MonoDevelop.Components.Docking
 			this.parent = parent;
 		}
 
-		NSTrackingArea trackingArea;
-
 		public Widget Parent => parent;
 
-		public bool Visible {
-			get => !Hidden;
-			set => Hidden = !value;
-		 }
-
-		bool focused;
-
-		public override bool ResignFirstResponder ()
+		bool hover;
+		public override void MouseEntered (NSEvent theEvent)
 		{
-			focused = false;
-			NSCursor.ArrowCursor.Set ();
-			return base.ResignFirstResponder ();
+			hover = true;
+			base.MouseEntered (theEvent);
 		}
 
-		public override bool BecomeFirstResponder ()
+		public override void MouseExited (NSEvent theEvent)
 		{
-			focused = true;
-			NSCursor.OpenHandCursor.Set ();
-			return base.BecomeFirstResponder ();
+			hover = false;
+			base.MouseExited (theEvent);
 		}
 
+
+		NSTrackingArea trackingArea;
 		public override void UpdateTrackingAreas ()
 		{
 			if (trackingArea != null) {
@@ -101,17 +93,19 @@ namespace MonoDevelop.Components.Docking
 
 		public override void MouseMoved (NSEvent theEvent)
 		{
+			NSCursor.OpenHandCursor.Set ();
 			base.MouseMoved (theEvent);
 		}
 
 		public override void MouseUp (NSEvent theEvent)
 		{
 			dragging = false;
-
-			if (focused) {
+			if (hover) {
 				NSCursor.OpenHandCursor.Set ();
+			} else {
+				NSCursor.ArrowCursor.Set ();
 			}
-			base.MouseUp (theEvent);
+            base.MouseUp (theEvent);
 		}
 
 		CGPoint point;
@@ -119,6 +113,9 @@ namespace MonoDevelop.Components.Docking
 		public override void MouseDragged (NSEvent theEvent)
 		{
 			dragging = true;
+
+			NSCursor.ClosedHandCursor.Set ();
+
 			//point = ConvertPointFromView (theEvent.LocationInWindow, null);
 			////moving
 			////dragin started
@@ -127,21 +124,6 @@ namespace MonoDevelop.Components.Docking
 			//dragSize = (dockGroup.Type == DockGroupType.Horizontal) ? obj.Allocation.Width : obj.Allocation.Height;
 
 			base.MouseDragged (theEvent);
-		}
-
-		public void SetSize (Rectangle rect)
-		{
-			Frame = new CGRect (0, 0, rect.Width, rect.Height);
-		}
-
-		public void Hide ()
-		{
-			Hidden = true;
-		}
-
-		public void Show ()
-		{
-			Hidden = false;
 		}
 	}
 
