@@ -256,7 +256,7 @@ namespace MonoDevelop.Components.Docking
 			}
 			foreach (var s in splitters)
 				if (s.Parent != null)
-					callback (s.NativeWidget as Widget);
+					callback ((Widget)s.NativeWidget);
 		}
 		
 		protected override bool OnExposeEvent (Gdk.EventExpose evnt)
@@ -354,7 +354,7 @@ namespace MonoDevelop.Components.Docking
 			for (int n=0; n < splitters.Count; n++) {
 				var s = splitters [n];
 				if (s.Parent != null)
-					Remove (s.NativeWidget as Widget);
+					Remove ((Widget)s.NativeWidget);
 			}
 
 			// Hide the splitters that are not required
@@ -373,7 +373,7 @@ namespace MonoDevelop.Components.Docking
 					var s = splitters [n];
 					if (!s.Visible)
 						s.Show ();
-					Add (s.NativeWidget as Widget);
+					Add ((Widget)s.NativeWidget);
 				} else {
 
 					SplitterWidgetWrapper s = null;
@@ -388,7 +388,7 @@ namespace MonoDevelop.Components.Docking
 					s = new SplitterWidgetWrapper (widget);
 					splitters.Add (s);
 					s.Show ();
-					Add (s.NativeWidget as Widget);
+					Add ((Widget)s.NativeWidget);
 				}
 			}
 		}
