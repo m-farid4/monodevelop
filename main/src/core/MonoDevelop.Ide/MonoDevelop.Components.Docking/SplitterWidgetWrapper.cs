@@ -44,13 +44,14 @@ namespace MonoDevelop.Components.Docking
 {
 	class SplitterWidgetWrapper : ISplitterWidget
 	{
-        public Gtk.Widget Parent {
+		public Gtk.Widget Parent {
 			get => NativeWidget.Parent;
-        }
+		}
+
 		public bool Visible {
 			get => NativeWidget.Visible;
 			set => NativeWidget.Visible = value;
-        }
+		}
 
 		public ISplitterWidget NativeWidget;
 		public SplitterWidgetWrapper (ISplitterWidget splitterWidget)
