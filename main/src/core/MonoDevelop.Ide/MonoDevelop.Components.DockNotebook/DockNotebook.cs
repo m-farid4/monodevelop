@@ -125,7 +125,9 @@ namespace MonoDevelop.Components.DockNotebook
 		{
 			tabStrip.IsPinEnabled = IdeApp.Preferences.EnablePinnedTabs.Value;
 			if (!tabStrip.IsPinEnabled) {
-				pages.ToList ().ForEach (d => d.IsPinned = false);
+				for (int i = 0; i < pages.Count; i++) {
+					pages[i].IsPinned = false;
+				}
 			}
 		}
 
